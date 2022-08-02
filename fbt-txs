@@ -1,4 +1,4 @@
 #!/bin/sh
 set -x
 ./fbt --with-updater updater_package copro_dist DIST_SUFFIX=$(git describe --tags)_txs # flash_usb
-echo consider ./fbt flash_usb
+echo consider ./fbt --with-udpater flash_usb

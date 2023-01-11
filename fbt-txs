@@ -1,5 +1,7 @@
 #!/bin/sh
 set -x
+ionice -c3 -p $$
+renice +19 $$
 export CUSTOM_FLIPPER_NAME=Yatoshi
 #./fbt --with-updater updater_package copro_dist DIST_SUFFIX=$(git describe --tags)_txs "$@" # flash_usb
 ./fbt COMPACT=1 DEBUG=0 updater_package DIST_SUFFIX=$(git describe --tags)_txs "$@"

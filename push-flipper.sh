@@ -1,5 +1,6 @@
 #!/bin/sh
 
+source scripts/toolchain/fbtenv.sh
 set -ex
 
 dirname=$(ls -d  dist/f7-C/f7-update-*/)

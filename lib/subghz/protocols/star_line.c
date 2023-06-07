@@ -10,6 +10,8 @@
 #include "../blocks/generic.h"
 #include "../blocks/math.h"
 
+#include "../subghz_keystore_i.h"
+
 #define TAG "SubGhzProtocolStarLine"
 
 static const SubGhzBlockConst subghz_protocol_star_line_const = {
@@ -83,18 +85,6 @@ const SubGhzProtocol subghz_protocol_star_line = {
     .encoder = &subghz_protocol_star_line_encoder,
 };
 
-static const char* mfname;
-
-static int kl_type;
-
-void star_line_reset_mfname() {
-    mfname = "";
-}
-
-void star_line_reset_kl_type() {
-    kl_type = 0;
-}
-
 /** 
  * Analysis of received data
  * @param instance Pointer to a SubGhzBlockGeneric* instance
@@ -163,36 +153,42 @@ static bool
             instance->generic.data, instance->generic.data_count_bit);
         hop = code_found_reverse & 0x00000000ffffffff;
     } else {
-    for
-        M_EACH(manufacture_code, *subghz_keystore_get_data(instance->keystore), SubGhzKeyArray_t) {
-            res = strcmp(furi_string_get_cstr(manufacture_code->name), instance->manufacture_name);
-            if(res == 0) {
-                switch(manufacture_code->type) {
-                case KEELOQ_LEARNING_SIMPLE:
-                    //Simple Learning
-                    hop = subghz_protocol_keeloq_common_encrypt(decrypt, manufacture_code->key);
-                    break;
-                case KEELOQ_LEARNING_NORMAL:
-                    //Normal Learning
-                    man =
-                        subghz_protocol_keeloq_common_normal_learning(fix, manufacture_code->key);
-                    hop = subghz_protocol_keeloq_common_encrypt(decrypt, man);
-                    break;
-                case KEELOQ_LEARNING_UNKNOWN:
-                    if(kl_type == 1) {
+        uint8_t kl_type_en = instance->keystore->kl_type;
+        for
+            M_EACH(
+                manufacture_code,
+                *subghz_keystore_get_data(instance->keystore),
+                SubGhzKeyArray_t) {
+                res = strcmp(
+                    furi_string_get_cstr(manufacture_code->name), instance->manufacture_name);
+                if(res == 0) {
+                    switch(manufacture_code->type) {
+                    case KEELOQ_LEARNING_SIMPLE:
+                        //Simple Learning
                         hop =
                             subghz_protocol_keeloq_common_encrypt(decrypt, manufacture_code->key);
-                    }
-                    if(kl_type == 2) {
+                        break;
+                    case KEELOQ_LEARNING_NORMAL:
+                        //Normal Learning
                         man = subghz_protocol_keeloq_common_normal_learning(
                             fix, manufacture_code->key);
                         hop = subghz_protocol_keeloq_common_encrypt(decrypt, man);
+                        break;
+                    case KEELOQ_LEARNING_UNKNOWN:
+                        if(kl_type_en == 1) {
+                            hop = subghz_protocol_keeloq_common_encrypt(
+                                decrypt, manufacture_code->key);
+                        }
+                        if(kl_type_en == 2) {
+                            man = subghz_protocol_keeloq_common_normal_learning(
+                                fix, manufacture_code->key);
+                            hop = subghz_protocol_keeloq_common_encrypt(decrypt, man);
+                        }
+                        break;
                     }
                     break;
                 }
-                break;
             }
-        }
     }
     if(hop) {
         uint64_t yek = (uint64_t)fix << 32 | hop;
@@ -237,10 +233,8 @@ static bool subghz_protocol_encoder_star_line_get_upload(
     uint8_t btn) {
     furi_assert(instance);
 
-    //gen new key
-    if(subghz_protocol_star_line_gen_data(instance, btn)) {
-        //ToDo if you need to add a callback to automatically update the data on the display
-    } else {
+    // Gen new key
+    if(!subghz_protocol_star_line_gen_data(instance, btn)) {
         return false;
     }
 
@@ -297,7 +291,7 @@ SubGhzProtocolStatus
         if(flipper_format_read_string(
                flipper_format, "Manufacture", instance->manufacture_from_file)) {
             instance->manufacture_name = furi_string_get_cstr(instance->manufacture_from_file);
-            mfname = furi_string_get_cstr(instance->manufacture_from_file);
+            instance->keystore->mfname = instance->manufacture_name;
         } else {
             FURI_LOG_D(TAG, "ENCODER: Missing Manufacture");
         }
@@ -379,8 +373,9 @@ void subghz_protocol_decoder_star_line_reset(void* context) {
     furi_assert(context);
     SubGhzProtocolDecoderStarLine* instance = context;
     instance->decoder.parser_step = StarLineDecoderStepReset;
-    mfname = "";
-    kl_type = 0;
+    // TODO
+    instance->keystore->mfname = "";
+    instance->keystore->kl_type = 0;
 }
 
 void subghz_protocol_decoder_star_line_feed(void* context, bool level, uint32_t duration) {
@@ -519,90 +514,22 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
     uint8_t btn = (uint8_t)(fix >> 24);
     uint32_t decrypt = 0;
     uint64_t man_normal_learning;
-    int res = 0;
-    if(mfname == 0x0) {
-        mfname = "";
-    }
+    bool mf_not_set = false;
+    // TODO:
+    // if(mfname == 0x0) {
+    //     mfname = "";
+    // }
 
-    if(strcmp(mfname, "") == 0) {
-    for
-        M_EACH(manufacture_code, *subghz_keystore_get_data(keystore), SubGhzKeyArray_t) {
-            switch(manufacture_code->type) {
-            case KEELOQ_LEARNING_SIMPLE:
-                // Simple Learning
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, manufacture_code->key);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    return 1;
-                }
-                break;
-            case KEELOQ_LEARNING_NORMAL:
-                // Normal Learning
-                // https://phreakerclub.com/forum/showpost.php?p=43557&postcount=37
-                man_normal_learning =
-                    subghz_protocol_keeloq_common_normal_learning(fix, manufacture_code->key);
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, man_normal_learning);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    return 1;
-                }
-                break;
-            case KEELOQ_LEARNING_UNKNOWN:
-                // Simple Learning
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, manufacture_code->key);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    kl_type = 1;
-                    return 1;
-                }
-                // Check for mirrored man
-                uint64_t man_rev = 0;
-                uint64_t man_rev_byte = 0;
-                for(uint8_t i = 0; i < 64; i += 8) {
-                    man_rev_byte = (uint8_t)(manufacture_code->key >> i);
-                    man_rev = man_rev | man_rev_byte << (56 - i);
-                }
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, man_rev);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    kl_type = 1;
-                    return 1;
-                }
-                //###########################
-                // Normal Learning
-                // https://phreakerclub.com/forum/showpost.php?p=43557&postcount=37
-                man_normal_learning =
-                    subghz_protocol_keeloq_common_normal_learning(fix, manufacture_code->key);
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, man_normal_learning);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    kl_type = 2;
-                    return 1;
-                }
-                // Check for mirrored man
-                man_normal_learning = subghz_protocol_keeloq_common_normal_learning(fix, man_rev);
-                decrypt = subghz_protocol_keeloq_common_decrypt(hop, man_normal_learning);
-                if(subghz_protocol_star_line_check_decrypt(instance, decrypt, btn, end_serial)) {
-                    *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                    mfname = *manufacture_name;
-                    kl_type = 2;
-                    return 1;
-                }
-                break;
-            }
-        }
-    } else if(strcmp(mfname, "Unknown") == 0) {
+    const char* mfname = keystore->mfname;
+
+    if(strcmp(mfname, "Unknown") == 0) {
         return 1;
-    } else {
+    } else if(strcmp(mfname, "") == 0) {
+        mf_not_set = true;
+    }
     for
         M_EACH(manufacture_code, *subghz_keystore_get_data(keystore), SubGhzKeyArray_t) {
-            res = strcmp(furi_string_get_cstr(manufacture_code->name), mfname);
-            if(res == 0) {
+            if(mf_not_set || (strcmp(furi_string_get_cstr(manufacture_code->name), mfname) == 0)) {
                 switch(manufacture_code->type) {
                 case KEELOQ_LEARNING_SIMPLE:
                     // Simple Learning
@@ -610,7 +537,7 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
+                        keystore->mfname = *manufacture_name;
                         return 1;
                     }
                     break;
@@ -623,7 +550,7 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
+                        keystore->mfname = *manufacture_name;
                         return 1;
                     }
                     break;
@@ -633,8 +560,8 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
-                        kl_type = 1;
+                        keystore->mfname = *manufacture_name;
+                        keystore->kl_type = 1;
                         return 1;
                     }
                     // Check for mirrored man
@@ -648,8 +575,8 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
-                        kl_type = 1;
+                        keystore->mfname = *manufacture_name;
+                        keystore->kl_type = 1;
                         return 1;
                     }
                     //###########################
@@ -661,11 +588,10 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
-                        kl_type = 2;
+                        keystore->mfname = *manufacture_name;
+                        keystore->kl_type = 2;
                         return 1;
                     }
-
                     // Check for mirrored man
                     man_normal_learning =
                         subghz_protocol_keeloq_common_normal_learning(fix, man_rev);
@@ -673,18 +599,17 @@ static uint8_t subghz_protocol_star_line_check_remote_controller_selector(
                     if(subghz_protocol_star_line_check_decrypt(
                            instance, decrypt, btn, end_serial)) {
                         *manufacture_name = furi_string_get_cstr(manufacture_code->name);
-                        mfname = *manufacture_name;
-                        kl_type = 2;
+                        keystore->mfname = *manufacture_name;
+                        keystore->kl_type = 2;
                         return 1;
                     }
                     break;
                 }
             }
         }
-    }
 
     *manufacture_name = "Unknown";
-    mfname = "Unknown";
+    keystore->mfname = "Unknown";
     instance->cnt = 0;
 
     return 0;
@@ -760,7 +685,7 @@ SubGhzProtocolStatus
         if(flipper_format_read_string(
                flipper_format, "Manufacture", instance->manufacture_from_file)) {
             instance->manufacture_name = furi_string_get_cstr(instance->manufacture_from_file);
-            mfname = furi_string_get_cstr(instance->manufacture_from_file);
+            instance->keystore->mfname = instance->manufacture_name;
         } else {
             FURI_LOG_D(TAG, "DECODER: Missing Manufacture");
         }

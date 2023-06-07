@@ -35,16 +35,9 @@ class GitVersion:
             or "unknown"
         )
 
-        branch_num = self._exec_git("rev-list --count HEAD") or "n/a"
-
         version = (
             os.environ.get("DIST_SUFFIX", None)
             or "unknown"
-        )
-
-        custom_fz_name = (
-            os.environ.get("CUSTOM_FLIPPER_NAME", None)
-            or ""
         )
 
         force_no_dirty = (
@@ -54,23 +47,27 @@ class GitVersion:
         if (force_no_dirty != ""):
             dirty = False
 
-        if (custom_fz_name != "") and (len(custom_fz_name) <= 8) and (custom_fz_name.isalnum()) and (custom_fz_name.isascii()):
-            return {
-                "GIT_COMMIT": commit,
-                "GIT_BRANCH": branch,
-                "GIT_BRANCH_NUM": branch_num,
-                "FURI_CUSTOM_FLIPPER_NAME": custom_fz_name,
-                "VERSION": version,
-                "BUILD_DIRTY": dirty and 1 or 0,
-            }
-        else:
-            return {
-                "GIT_COMMIT": commit,
-                "GIT_BRANCH": branch,
-                "GIT_BRANCH_NUM": branch_num,
-                "VERSION": version,
-                "BUILD_DIRTY": dirty and 1 or 0,
-            }
+        return {
+            "GIT_COMMIT": commit,
+            "GIT_BRANCH": branch,
+            "VERSION": version,
+            "BUILD_DIRTY": dirty and 1 or 0,
+            "GIT_ORIGIN": ",".join(self._get_git_origins()),
+        }
+
+    def _get_git_origins(self):
+        try:
+            remotes = self._exec_git("remote -v")
+        except subprocess.CalledProcessError:
+            return set()
+        origins = set()
+        for line in remotes.split("\n"):
+            if not line:
+                continue
+            _, destination = line.split("\t")
+            url, _ = destination.split(" ")
+            origins.add(url)
+        return origins
 
     def _exec_git(self, args):
         cmd = ["git"]
@@ -99,6 +96,13 @@ class Main(App):
             help="hardware target",
             required=True,
         )
+        self.parser_generate.add_argument(
+            "-fw-origin",
+            dest="firmware_origin",
+            type=str,
+            help="firmware origin",
+            required=True,
+        )
         self.parser_generate.add_argument("--dir", dest="sourcedir", required=True)
         self.parser_generate.set_defaults(func=self.generate)
 
@@ -114,6 +118,7 @@ class Main(App):
             {
                 "BUILD_DATE": build_date.strftime("%d-%m-%Y"),
                 "TARGET": self.args.target,
+                "FIRMWARE_ORIGIN": self.args.firmware_origin,
             }
         )
 

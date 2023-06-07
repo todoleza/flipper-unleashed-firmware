@@ -43,7 +43,9 @@ Our Discord Community:
 * Picopass/iClass plugin included in releases
 * Recompiled IR TV Universal Remote for ALL buttons
 * Universal remote for Projectors, Fans, A/Cs and Audio(soundbars, etc.)
-* Customizable Flipper name
+* Customizable Flipper name **Update! Now can be changed in Settings->Desktop** (by @xMasterX and @Willy-JL)
+* Text Input UI element -> Cursor feature (by @Willy-JL)
+- **BadBT** plugin (BT version of BadKB) [(by Willy-JL, ClaraCrazy, XFW contributors)](https://github.com/ClaraCrazy/Flipper-Xtreme/tree/dev/applications/main/bad_kb) - (See in Applications->Tools) - (aka BadUSB via Bluetooth)
 - BadUSB -> Keyboard layouts [(by rien > dummy-decoy)](https://github.com/dummy-decoy/flipperzero-firmware/tree/dummy_decoy/bad_usb_keyboard_layout)
 - Sub-GHz -> External CC1101 module support - [(by quen0n)](https://github.com/DarkFlippers/unleashed-firmware/pull/307)
 - Sub-GHz -> `Add manually` menu extended with new protocols
@@ -58,8 +60,8 @@ Our Discord Community:
 * SubGHz -> Read mode UI improvements (scrolling text, + shows time when signal was received) (by @wosk)
 * Sub-GHz -> External CC1101 module support (Hardware SPI used)
 * SubGHz -> **Hold right in received signal list to delete selected signal**
-* SubGHz -> **Custom buttons for Keeloq / Alutech AT4N / Nice Flor S / Somfy Telis / Security+ 2.0** - now you can use arrow buttons to send signal with different button code
-* SubGHz -> BFT Mitto / Somfy Telis / Nice Flor S manual creation with programming new remote into receiver (use button 0xF for BFT Mitto, 0x8 (Prog) on Somfy Telis)
+* SubGHz -> **Custom buttons for Keeloq / Alutech AT4N / Nice Flor S / Somfy Telis / Security+ 2.0 / CAME Atomo** - now you can use arrow buttons to send signal with different button code
+* SubGHz -> BFT Mitto / Somfy Telis / Nice Flor S / CAME Atomo, etc.. manual creation with programming new remote into receiver (use button 0xF for BFT Mitto, 0x8 (Prog) on Somfy Telis)
 * SubGHz -> Debug mode counter increase settings (+1 -> +5, +10, default: +1)
 * SubGHz -> Debug PIN output settings for protocol development
 * Infrared -> Debug TX PIN output settings
@@ -75,6 +77,7 @@ Keeloq [Not ALL systems supported for decode or emulation yet!] - [Supported man
 
 Encoders or sending made by @xMasterX:
 - Nero Radio 57bit (+ 56bit encoder improvements)
+- CAME 12bit/24bit encoder fixes (already merged in OFW)
 - Keeloq: HCS101
 - Keeloq: AN-Motors
 - Keeloq: JCM Tech
@@ -85,24 +88,24 @@ Encoders or sending made by @xMasterX:
 - Keeloq: Mutancode
 - Keeloq: Normstahl
 - Keeloq: Beninca + Allmatic
-- Keeloq: Stilmatic / Schellenberg
+- Keeloq: Stilmatic
 - Keeloq: CAME Space
 - Keeloq: Aprimatic (model TR and similar)
 
-Encoders/sending made by @Eng1n33r & @xMasterX:
-- CAME Atomo
-- Nice Flor S
+Encoders or sending made by @Eng1n33r(first implementation in Q2 2022) & @xMasterX (current version):
+- CAME Atomo -> Update! check out new [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
+- Nice Flor S -> How to create new remote - [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
 - FAAC SLH (Spa) [External seed calculation required (For info contact me in Discord: Nano#8998)] 
 - Keeloq: BFT Mitto [External seed calculation required (For info contact me in Discord: Nano#8998)] -> Update! check out new [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
 - Star Line
-- Security+ v1 & v2
+- Security+ v1 & v2 (encoders was made in OFW)
 
 Encoders made by @assasinfil & @xMasterX:
-- Somfy Telis
+- Somfy Telis -> How to create new remote - [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
 - Somfy Keytis
 - KingGates Stylo 4k
-- Alutech AT-4N
-- Nice ON2E (Nice One)
+- Alutech AT-4N -> How to create new remote - [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
+- Nice ON2E (Nice One) -> How to create new remote - [instructions](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/SubGHzRemoteProg.md)
 
 ## Please support development of the project
 The majority of this project is developed and maintained by me, @xMasterX.
@@ -140,10 +143,10 @@ You can support us by using links or addresses below:
 - WAV Player [(OFW: DrZlo13)](https://github.com/flipperdevices/flipperzero-firmware/tree/zlo/wav-player) - Fixed and improved by [LTVA1](https://github.com/LTVA1/wav_player) -> Also outputs audio on `PA6` - `3(A6)` pin
 - Barcode generator plugin [(original by McAzzaMan)](https://github.com/McAzzaMan/flipperzero-firmware/tree/UPC-A_Barcode_Generator/applications/barcode_generator) - [EAN-8 and refactoring](https://github.com/DarkFlippers/unleashed-firmware/pull/154) by @msvsergey
 - GPIO: Sentry Safe plugin [(by H4ckd4ddy)](https://github.com/H4ckd4ddy/flipperzero-sentry-safe-plugin)
-- ESP32: WiFi Marauder companion plugin [(by 0xchocolate)](https://github.com/0xchocolate/flipperzero-firmware-with-wifi-marauder-companion) - Saving .pcap on flipper microSD [by tcpassos](https://github.com/tcpassos/flipperzero-firmware-with-wifi-marauder-companion) -> Only with custom marauder build (It is necessary to uncomment "#define WRITE_PACKETS_SERIAL" in configs.h (in marauder fw) and compile the firmware for the wifi board.) Or download precompiled build -> [Download esp32_marauder_ver_flipper_sd_serial.bin](https://github.com/justcallmekoko/ESP32Marauder/releases/latest)
+- ESP32: WiFi Marauder companion plugin [(by 0xchocolate)](https://github.com/0xchocolate/flipperzero-wifi-marauder) - Saving .pcap on flipper microSD [by tcpassos](https://github.com/tcpassos/flipperzero-firmware-with-wifi-marauder-companion) -> Only with custom marauder build (It is necessary to uncomment "#define WRITE_PACKETS_SERIAL" in configs.h (in marauder fw) and compile the firmware for the wifi board.) Or download precompiled build -> [Download esp32_marauder_ver_flipper_sd_serial.bin](https://github.com/justcallmekoko/ESP32Marauder/releases/latest)
 - NRF24: Sniffer & MouseJacker (with changes) [(by mothball187)](https://github.com/mothball187/flipperzero-nrf24/tree/main/mousejacker)
 - Simple Clock (timer by GMMan) [(original by CompaqDisc)](https://gist.github.com/CompaqDisc/4e329c501bd03c1e801849b81f48ea61)
-- **Sub-GHz Remote** (UniversalRF Remix) [(by @darmiel & @xMasterX)](https://github.com/darmiel/flipper-playlist/tree/feat/unirf-protocols) (original by @ESurge)
+- **Sub-GHz Remote** [(by @gid9798)](https://github.com/gid9798)
 - Spectrum Analyzer (with changes) [(by jolcese)](https://github.com/jolcese/flipperzero-firmware/tree/spectrum/applications/spectrum_analyzer) - [Ultra Narrow mode & scan channels non-consecutively](https://github.com/theY4Kman/flipperzero-firmware/commits?author=theY4Kman)
 - Metronome [(by panki27)](https://github.com/panki27/Metronome)
 - DTMF Dolphin [(by litui)](https://github.com/litui/dtmf_dolphin)
@@ -162,6 +165,8 @@ You can support us by using links or addresses below:
 - **ProtoView** [(by antirez)](https://github.com/antirez/protoview)
 - **SWD Probe** [(by g3gg0)](https://github.com/g3gg0/flipper-swd_probe)
 - IR Scope [(by kallanreed)](https://github.com/DarkFlippers/unleashed-firmware/pull/407)
+- **BadBT** plugin (BT version of BadKB) [(by Willy-JL, ClaraCrazy, XFW contributors)](https://github.com/ClaraCrazy/Flipper-Xtreme/tree/dev/applications/main/bad_kb) (See in Applications->Tools) - (aka BadUSB via Bluetooth)
+- **Mifare Nested** [(by AloneLiberty)](https://github.com/AloneLiberty/FlipperNested) - Works with PC and python app `FlipperNested`
 
 Games:
 - DOOM (fixed) [(by p4nic4ttack)](https://github.com/p4nic4ttack/doom-flipper-zero/)
@@ -189,6 +194,8 @@ Games:
 ## [- BadUSB: how to add new keyboard layouts](https://github.com/dummy-decoy/flipperzero_badusb_kl)
 
 ## [- How to change Flipper name](https://github.com/DarkFlippers/unleashed-firmware/blob/dev/documentation/CustomFlipperName.md)
+
+## [- How to use Mifare Nested plugin to recover keys](https://github.com/AloneLiberty/FlipperNested#how-to-use-it)
 
 ### **Sub-GHz**
 

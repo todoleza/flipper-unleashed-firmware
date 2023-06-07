@@ -246,6 +246,11 @@ static void infrared_free(Infrared* infrared) {
 
     furi_string_free(infrared->file_path);
 
+    // Disable 5v power if was enabled for external module
+    if(furi_hal_power_is_otg_enabled()) {
+        furi_hal_power_disable_otg();
+    }
+
     free(infrared);
 }
 
@@ -321,7 +326,8 @@ void infrared_tx_start_signal(Infrared* infrared, InfraredSignal* signal) {
 
     if(infrared_signal_is_raw(signal)) {
         InfraredRawSignal* raw = infrared_signal_get_raw_signal(signal);
-        infrared_worker_set_raw_signal(infrared->worker, raw->timings, raw->timings_size);
+        infrared_worker_set_raw_signal(
+            infrared->worker, raw->timings, raw->timings_size, raw->frequency, raw->duty_cycle);
     } else {
         InfraredMessage* message = infrared_signal_get_message(signal);
         infrared_worker_set_decoded_signal(infrared->worker, message);
